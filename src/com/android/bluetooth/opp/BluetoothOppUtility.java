@@ -194,7 +194,7 @@ public class BluetoothOppUtility {
 
         if (isRecognizedFileType(context, path, mimetype)) {
             Intent activityIntent = new Intent(Intent.ACTION_VIEW);
-            activityIntent.setDataAndType(path, mimetype);
+            activityIntent.setDataAndTypeAndNormalize(path, mimetype);
 
             activityIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             try {
@@ -222,7 +222,7 @@ public class BluetoothOppUtility {
         if (D) Log.d(TAG, "RecognizedFileType() fileUri: " + fileUri + " mimetype: " + mimetype);
 
         Intent mimetypeIntent = new Intent(Intent.ACTION_VIEW);
-        mimetypeIntent.setDataAndType(fileUri, mimetype);
+        mimetypeIntent.setDataAndTypeAndNormalize(fileUri, mimetype);
         List<ResolveInfo> list = context.getPackageManager().queryIntentActivities(mimetypeIntent,
                 PackageManager.MATCH_DEFAULT_ONLY);
 
@@ -322,7 +322,7 @@ public class BluetoothOppUtility {
     static void closeSendFileInfo(Uri uri) {
         if (D) Log.d(TAG, "closeSendFileInfo: uri=" + uri);
         BluetoothOppSendFileInfo info = sSendFileMap.remove(uri);
-        if (info != null) {
+        if (info != null && info.mInputStream != null) {
             try {
                 info.mInputStream.close();
             } catch (IOException ignored) {
