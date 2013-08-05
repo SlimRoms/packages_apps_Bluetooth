@@ -1116,7 +1116,7 @@ public class MapUtils {
         }
         if (pos > 0) {
             if (V){
-                Log.v(TAG, "vCard start position greater than 0::");
+            	Log.v(TAG, "vCard start position greater than 0::");
             }
             int beginVcardPos = pos + ("\r\n".length());
             int endVcardPos = bmsg.indexOf("END:BENV");

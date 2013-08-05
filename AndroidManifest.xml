@@ -55,7 +55,6 @@
     <uses-permission android:name="android.permission.BLUETOOTH_STACK" />
     <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS"/>
     <uses-permission android:name="android.permission.MANAGE_USERS"/>
-    <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="com.google.android.gallery3d.permission.GALLERY_PROVIDER"/>
     <uses-permission android:name="com.android.gallery3d.permission.GALLERY_PROVIDER"/>
 
@@ -230,25 +229,6 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </receiver>
-        <activity android:name=".map.BluetoothMasActivity"
-            android:process="@string/process"
-            android:excludeFromRecents="true"
-            android:theme="@*android:style/Theme.Dialog.Alert">
-            <intent-filter>
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
-        <service
-            android:process="@string/process"
-            android:name=".map.BluetoothMasService" >
-        </service>
-        <receiver
-            android:process="@string/process"
-            android:name=".map.BluetoothMasReceiver">
-            <intent-filter>
-                <action android:name="android.bluetooth.adapter.action.STATE_CHANGED"/>
-            </intent-filter>
-        </receiver>
         <service
             android:process="@string/process"
             android:name = ".gatt.GattService"
@@ -297,5 +277,24 @@
                 <action android:name="android.bluetooth.IBluetoothPan" />
             </intent-filter>
         </service>
+        <activity android:name=".map.BluetoothMasActivity"
+            android:process="@string/process"
+            android:excludeFromRecents="true"
+            android:theme="@*android:style/Theme.Dialog.Alert">
+            <intent-filter>
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <service
+            android:process="@string/process"
+            android:name=".map.BluetoothMasService" >
+        </service>
+        <receiver
+            android:process="@string/process"
+            android:name=".map.BluetoothMasReceiver">
+            <intent-filter>
+                <action android:name="android.bluetooth.adapter.action.STATE_CHANGED"/>
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

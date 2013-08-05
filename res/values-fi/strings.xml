@@ -97,7 +97,7 @@
     <string name="notification_sending">Bluetooth-jako: Lähetetään tiedostoa <xliff:g id="file">%1$s</xliff:g></string>
     <!-- label for the notification item of sent file -->
     <string name="notification_sent">Bluetooth-jako: Tiedosto <xliff:g id="file">%1$s</xliff:g> lähetetty</string> 
-    <!-- label for the notification item of sent file -status -->
+    <!-- label for the notification item of sent file -status --> 
     <string name="notification_sent_complete">100 % valmis</string>
     <!-- label for the notification item of failed sending file -->
     <string name="notification_sent_fail">Bluetooth-jako: Tiedostoa <xliff:g id="file">%1$s</xliff:g> ei lähetetty</string>

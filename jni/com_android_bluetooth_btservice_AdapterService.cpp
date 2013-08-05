@@ -94,19 +94,6 @@ static int get_properties(int num_properties, bt_property_t *properties, jintArr
         propVal = callbackEnv->NewByteArray(properties[i].len);
         if (propVal == NULL) goto Fail;
 
-        /* The higher layers expect rssi as a short int value, while the value is sent as a byte
-         * to jni. Converting rssi value to the expected format.*/
-        if (properties[i].type == BT_PROPERTY_REMOTE_RSSI)
-        {
-            jbyte rssi = *((jbyte *) properties[i].val);
-            short rssiValue = rssi;
-            properties[i].len = sizeof(rssiValue);
-            properties[i].val = &rssiValue;
-        }
-
-        propVal = callbackEnv->NewByteArray(properties[i].len);
-        if (propVal == NULL) goto Fail;
-
         callbackEnv->SetByteArrayRegion(propVal, 0, properties[i].len,
                                              (jbyte*)properties[i].val);
         callbackEnv->SetObjectArrayElement(*props, i, propVal);
@@ -357,7 +344,7 @@ static void discovery_state_changed_callback(bt_discovery_state_t state) {
     checkAndClearExceptionFromCallback(callbackEnv, __FUNCTION__);
 }
 
-static void pin_request_callback(bt_bdaddr_t *bd_addr, bt_bdname_t *bdname, uint32_t cod) {
+static void pin_request_callback(bt_bdaddr_t *bd_addr, bt_bdname_t *bdname, uint32_t cod, uint8_t secure) {
     jbyteArray addr, devname;
     if (!checkCallbackThread()) {
        ALOGE("Callback: '%s' is not called on the correct thread", __FUNCTION__);
@@ -377,7 +364,7 @@ static void pin_request_callback(bt_bdaddr_t *bd_addr, bt_bdname_t *bdname, uint
 
     callbackEnv->SetByteArrayRegion(devname, 0, sizeof(bt_bdname_t), (jbyte*)bdname);
 
-    callbackEnv->CallVoidMethod(sJniCallbacksObj, method_pinRequestCallback, addr, devname, cod);
+    callbackEnv->CallVoidMethod(sJniCallbacksObj, method_pinRequestCallback, addr, devname, cod, secure);
 
     checkAndClearExceptionFromCallback(callbackEnv, __FUNCTION__);
     callbackEnv->DeleteLocalRef(addr);
@@ -490,7 +477,7 @@ static void classInitNative(JNIEnv* env, jclass clazz) {
                                                             "([B[I[[B)V");
     method_deviceFoundCallback = env->GetMethodID(jniCallbackClass, "deviceFoundCallback", "([B)V");
     method_pinRequestCallback = env->GetMethodID(jniCallbackClass, "pinRequestCallback",
-                                                 "([B[BI)V");
+                                                 "([B[BIZ)V");
     method_sspRequestCallback = env->GetMethodID(jniCallbackClass, "sspRequestCallback",
                                                  "([B[BIII)V");
 
