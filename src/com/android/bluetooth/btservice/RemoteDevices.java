@@ -113,10 +113,8 @@ final class RemoteDevices {
         private short mRssi;
         private ParcelUuid[] mUuids;
         private int mDeviceType;
-        private int retValue;
         private String mAlias;
         private int mBondState;
-        private boolean mTrustValue;
 
         DeviceProperties() {
             mBondState = BluetoothDevice.BOND_NONE;
@@ -192,30 +190,6 @@ final class RemoteDevices {
             synchronized (mObject) {
                 mAdapterService.setDevicePropertyNative(mAddress,
                     AbstractionLayer.BT_PROPERTY_REMOTE_FRIENDLY_NAME, mAlias.getBytes());
-            }
-        }
-
-        /**
-         * @return the mtrustValue
-         */
-        boolean getTrust() {
-            synchronized (mObject) {
-                debugLog("getTrust. returning: "+mTrustValue);
-                return mTrustValue;
-            }
-        }
-
-        /**
-         * @param mtrustValue, the trust value to set
-         */
-        void setTrust(boolean trustVal) {
-            int mTempTrustValue;
-            mTempTrustValue = trustVal? 1: 0;
-            mTrustValue = trustVal;
-            synchronized (mObject) {
-                mAdapterService.setDevicePropertyNative(mAddress,
-                    AbstractionLayer.BT_PROPERTY_REMOTE_TRUST_VALUE,
-                    Utils.intToByteArray(mTempTrustValue));
             }
         }
 
@@ -332,14 +306,6 @@ final class RemoteDevices {
                             // The device type from hal layer, defined in bluetooth.h,
                             // matches the type defined in BluetoothDevice.java
                             device.mDeviceType = Utils.byteArrayToInt(val);
-                            break;
-                        case AbstractionLayer.BT_PROPERTY_REMOTE_TRUST_VALUE:
-                            // The trust Value set for remote device stored in nvram
-                            device.retValue = Utils.byteArrayToInt(val);
-                            if(device.retValue == 1)
-                                device.mTrustValue = true;
-                            else
-                                device.mTrustValue = false;
                             break;
                         case AbstractionLayer.BT_PROPERTY_REMOTE_RSSI:
                             // RSSI from hal is in one byte
@@ -471,11 +437,6 @@ final class RemoteDevices {
             intent = new Intent(BluetoothDevice.ACTION_ACL_CONNECTED);
             debugLog("aclStateChangeCallback: State:Connected to Device:" + device);
         } else {
-            if (device.getBondState() == BluetoothDevice.BOND_BONDING) {
-                /*Broadcasting PAIRING_CANCEL intent as well in this case*/
-                intent = new Intent(BluetoothDevice.ACTION_PAIRING_CANCEL);
-                mAdapterService.sendBroadcast(intent, mAdapterService.BLUETOOTH_ADMIN_PERM);
-            }
             intent = new Intent(BluetoothDevice.ACTION_ACL_DISCONNECTED);
             debugLog("aclStateChangeCallback: State:DisConnected to Device:" + device);
         }

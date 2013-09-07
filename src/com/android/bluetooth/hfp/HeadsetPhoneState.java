@@ -125,10 +125,7 @@ class HeadsetPhoneState {
     }
 
     void setRoam(int roam) {
-        if (mRoam != roam) {
-            mRoam = roam;
-            sendDeviceStateChanged();
-        }
+        mRoam = roam;
     }
 
     void setBatteryCharge(int batteryLevel) {
