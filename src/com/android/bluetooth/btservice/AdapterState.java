@@ -339,13 +339,16 @@ final class AdapterState extends StateMachine {
                     errorLog("Error stopping Bluetooth profiles");
                     mPendingCommandState.setTurningOff(false);
                     transitionTo(mOffState);
+                    notifyAdapterStateChange(BluetoothAdapter.STATE_OFF);
                     break;
                 case DISABLE_TIMEOUT:
                     if (DBG) Log.d(TAG,"CURRENT_STATE=PENDING, MESSAGE = DISABLE_TIMEOUT, isTurningOn=" + isTurningOn + ", isTurningOff=" + isTurningOff);
                     errorLog("Error disabling Bluetooth");
                     mPendingCommandState.setTurningOff(false);
-                    transitionTo(mOnState);
-                    notifyAdapterStateChange(BluetoothAdapter.STATE_ON);
+                    transitionTo(mOffState);
+                    notifyAdapterStateChange(BluetoothAdapter.STATE_OFF);
+                    errorLog("Killing the process to force a restart as part cleanup");
+                    android.os.Process.killProcess(android.os.Process.myPid());
                     break;
                 default:
                     if (DBG) Log.d(TAG,"ERROR: UNEXPECTED MESSAGE: CURRENT_STATE=PENDING, MESSAGE = " + msg.what );

@@ -20,6 +20,7 @@ package com.android.bluetooth.btservice;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothMasInstance;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
@@ -43,6 +44,7 @@ final class RemoteDevices {
     private static BluetoothAdapter mAdapter;
     private static AdapterService mAdapterService;
     private static ArrayList<BluetoothDevice> mSdpTracker;
+    private static ArrayList<BluetoothDevice> mSdpMasTracker;
 
     /* The WakeLock is used for bringing up the LCD during a pairing request
      * from remote device when Android is in Suspend state.*/
@@ -52,12 +54,16 @@ final class RemoteDevices {
     private static final int UUID_INTENT_DELAY = 6000;
     private static final int MESSAGE_UUID_INTENT = 1;
 
+    private static final int MAS_INSTANCE_INTENT_DELAY = 6000;
+    private static final int MESSAGE_MAS_INSTANCE_INTENT = 2;
+
     private HashMap<BluetoothDevice, DeviceProperties> mDevices;
 
     RemoteDevices(PowerManager pm, AdapterService service) {
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         mAdapterService = service;
         mSdpTracker = new ArrayList<BluetoothDevice>();
+        mSdpMasTracker = new ArrayList<BluetoothDevice>();
         mDevices = new HashMap<BluetoothDevice, DeviceProperties>();
 
         //WakeLock instantiation in RemoteDevices class
@@ -71,6 +77,9 @@ final class RemoteDevices {
     void cleanup() {
         if (mSdpTracker !=null)
             mSdpTracker.clear();
+
+        if (mSdpMasTracker != null)
+            mSdpMasTracker.clear();
 
         if (mDevices != null)
             mDevices.clear();
@@ -113,11 +122,15 @@ final class RemoteDevices {
         private short mRssi;
         private ParcelUuid[] mUuids;
         private int mDeviceType;
+        private int retValue;
         private String mAlias;
         private int mBondState;
+        private boolean mTrustValue;
+        int retry_count;
 
         DeviceProperties() {
             mBondState = BluetoothDevice.BOND_NONE;
+            retry_count = 0;
         }
 
         /**
@@ -194,6 +207,30 @@ final class RemoteDevices {
         }
 
         /**
+         * @return the mtrustValue
+         */
+        boolean getTrust() {
+            synchronized (mObject) {
+                debugLog("getTrust. returning: "+mTrustValue);
+                return mTrustValue;
+            }
+        }
+
+        /**
+         * @param mtrustValue, the trust value to set
+         */
+        void setTrust(boolean trustVal) {
+            int mTempTrustValue;
+            mTempTrustValue = trustVal? 1: 0;
+            mTrustValue = trustVal;
+            synchronized (mObject) {
+                mAdapterService.setDevicePropertyNative(mAddress,
+                    AbstractionLayer.BT_PROPERTY_REMOTE_TRUST_VALUE,
+                    Utils.intToByteArray(mTempTrustValue));
+            }
+        }
+
+        /**
          * @param mBondState the mBondState to set
          */
         void setBondState(int mBondState) {
@@ -230,6 +267,18 @@ final class RemoteDevices {
 
         //Remove the outstanding UUID request
         mSdpTracker.remove(device);
+    }
+
+    private void sendMasInstanceIntent(BluetoothDevice device,
+            ArrayList<BluetoothMasInstance> instances) {
+        Intent intent = new Intent(BluetoothDevice.ACTION_MAS_INSTANCE);
+
+        intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
+        if (instances != null)  intent.putExtra(BluetoothDevice.EXTRA_MAS_INSTANCE, instances);
+        mAdapterService.sendBroadcast(intent, AdapterService.BLUETOOTH_ADMIN_PERM);
+
+        //Remove the outstanding UUID request
+        mSdpMasTracker.remove(device);
     }
 
     private void sendDisplayPinIntent(byte[] address, int pin) {
@@ -306,6 +355,14 @@ final class RemoteDevices {
                             // The device type from hal layer, defined in bluetooth.h,
                             // matches the type defined in BluetoothDevice.java
                             device.mDeviceType = Utils.byteArrayToInt(val);
+                            break;
+                        case AbstractionLayer.BT_PROPERTY_REMOTE_TRUST_VALUE:
+                            // The trust Value set for remote device stored in nvram
+                            device.retValue = Utils.byteArrayToInt(val);
+                            if(device.retValue == 1)
+                                device.mTrustValue = true;
+                            else
+                                device.mTrustValue = false;
                             break;
                         case AbstractionLayer.BT_PROPERTY_REMOTE_RSSI:
                             // RSSI from hal is in one byte
@@ -437,12 +494,43 @@ final class RemoteDevices {
             intent = new Intent(BluetoothDevice.ACTION_ACL_CONNECTED);
             debugLog("aclStateChangeCallback: State:Connected to Device:" + device);
         } else {
+            if (device.getBondState() == BluetoothDevice.BOND_BONDING) {
+                /*Broadcasting PAIRING_CANCEL intent as well in this case*/
+                intent = new Intent(BluetoothDevice.ACTION_PAIRING_CANCEL);
+                intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
+                mAdapterService.sendBroadcast(intent, mAdapterService.BLUETOOTH_ADMIN_PERM);
+            }
             intent = new Intent(BluetoothDevice.ACTION_ACL_DISCONNECTED);
             debugLog("aclStateChangeCallback: State:DisConnected to Device:" + device);
         }
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
         intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
         mAdapterService.sendBroadcast(intent, mAdapterService.BLUETOOTH_PERM);
+    }
+
+    void deviceMasInstancesFoundCallback(int status, byte[] address, String[] name, int[] scn,
+            int[] id, int[] msgtype) {
+        BluetoothDevice device = getDevice(address);
+
+        if (device == null) {
+            errorLog("deviceMasInstancesFoundCallback: Device is NULL");
+            return;
+        }
+
+        debugLog("deviceMasInstancesFoundCallback: found " + name.length + " instances");
+
+        ArrayList<BluetoothMasInstance> instances = new ArrayList<BluetoothMasInstance>();
+
+        for (int i = 0; i < name.length; i++) {
+            BluetoothMasInstance inst = new BluetoothMasInstance(id[i], name[i],
+                    scn[i], msgtype[i]);
+
+            debugLog(inst.toString());
+
+            instances.add(inst);
+        }
+
+        sendMasInstanceIntent(device, instances);
     }
 
     void fetchUuids(BluetoothDevice device) {
@@ -457,6 +545,17 @@ final class RemoteDevices {
         mAdapterService.getRemoteServicesNative(Utils.getBytesFromAddress(device.getAddress()));
     }
 
+    void fetchMasInstances(BluetoothDevice device) {
+        if (mSdpMasTracker.contains(device)) return;
+        mSdpMasTracker.add(device);
+
+        Message message = mHandler.obtainMessage(MESSAGE_MAS_INSTANCE_INTENT);
+        message.obj = device;
+        mHandler.sendMessageDelayed(message, MAS_INSTANCE_INTENT_DELAY);
+
+        mAdapterService.getRemoteMasInstancesNative(Utils.getBytesFromAddress(device.getAddress()));
+    }
+
     private final Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -465,6 +564,12 @@ final class RemoteDevices {
                 BluetoothDevice device = (BluetoothDevice)msg.obj;
                 if (device != null) {
                     sendUuidIntent(device);
+                }
+                break;
+            case MESSAGE_MAS_INSTANCE_INTENT:
+                BluetoothDevice dev = (BluetoothDevice)msg.obj;
+                if (dev != null) {
+                    sendMasInstanceIntent(dev, null);
                 }
                 break;
             }
