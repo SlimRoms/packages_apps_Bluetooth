@@ -1260,8 +1260,7 @@ final class HeadsetStateMachine extends StateMachine {
             mVoiceRecognitionStarted + " mWaitingforVoiceRecognition: " + mWaitingForVoiceRecognition +
             " isInCall: " + isInCall());
         if (state == HeadsetHalConstants.VR_STATE_STARTED) {
-            if (!mVoiceRecognitionStarted &&
-                !isVirtualCallInProgress() &&
+            if (!isVirtualCallInProgress() &&
                 !isInCall())
             {
                 try {
