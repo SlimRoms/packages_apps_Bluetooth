@@ -220,8 +220,8 @@ public class BluetoothOppLauncherActivity extends Activity {
         final ContentResolver resolver = this.getContentResolver();
 
         // Check if airplane mode is on
-        final boolean isAirplaneModeOn = Settings.System.getInt(resolver,
-                Settings.System.AIRPLANE_MODE_ON, 0) == 1;
+        final boolean isAirplaneModeOn = Settings.Global.getInt(resolver,
+                Settings.Global.AIRPLANE_MODE_ON, 0) == 1;
         if (!isAirplaneModeOn) {
             return true;
         }
