@@ -61,10 +61,6 @@ static void bta2dp_connection_state_callback(btav_connection_state_t state, bt_b
 
     ALOGI("%s", __FUNCTION__);
 
-    if (mCallbacksObj == NULL) {
-        ALOGE("Callbacks Obj is no more valid: '%s", __FUNCTION__);
-        return;
-    }
     if (!checkCallbackThread()) {                                       \
         ALOGE("Callback: '%s' is not called on the correct thread", __FUNCTION__); \
         return;                                                         \
@@ -97,10 +93,6 @@ static void bta2dp_audio_state_callback(btav_audio_state_t state, bt_bdaddr_t* b
 
     ALOGI("%s", __FUNCTION__);
 
-    if (mCallbacksObj == NULL) {
-        ALOGE("Callbacks Obj is no more valid: '%s", __FUNCTION__);
-        return;
-    }
     if (!checkCallbackThread()) {                                       \
         ALOGE("Callback: '%s' is not called on the correct thread", __FUNCTION__); \
         return;                                                         \
@@ -132,10 +124,6 @@ static void bta2dp_connection_priority_callback(bt_bdaddr_t* bd_addr) {
 
     ALOGI("%s", __FUNCTION__);
 
-    if (mCallbacksObj == NULL) {
-        ALOGE("Callbacks Obj is no more valid: '%s", __FUNCTION__);
-        return;
-    }
     if (!checkCallbackThread()) {                                       \
         ALOGE("Callback: '%s' is not called on the correct thread", __FUNCTION__); \
         return;                                                         \
@@ -166,10 +154,6 @@ static void bta2dp_multicast_enabled_callback(int state) {
 
     ALOGI("%s", __FUNCTION__);
 
-    if (mCallbacksObj == NULL) {
-        ALOGE("Callbacks Obj is no more valid: '%s", __FUNCTION__);
-        return;
-    }
     if (!checkCallbackThread()) {                                       \
         ALOGE("Callback: '%s' is not called on the correct thread", __FUNCTION__); \
         return;                                                         \
