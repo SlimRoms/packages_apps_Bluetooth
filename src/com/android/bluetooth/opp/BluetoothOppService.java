@@ -418,11 +418,11 @@ public class BluetoothOppService extends Service {
             String action = intent.getAction();
 
             if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
-                switch (intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)) {
+                switch (mAdapter.getState()) {
                     case BluetoothAdapter.STATE_ON:
                         if (V) Log.v(TAG,
                                     "Receiver BLUETOOTH_STATE_CHANGED_ACTION, BLUETOOTH_STATE_ON");
-                        startSocketListener();
+                        mHandler.sendMessage(mHandler.obtainMessage(START_LISTENER));
                         break;
                     case BluetoothAdapter.STATE_TURNING_OFF:
                         if (V) Log.v(TAG, "Receiver DISABLED_ACTION ");
@@ -449,6 +449,7 @@ public class BluetoothOppService extends Service {
             mPendingUpdate = true;
             if ((mUpdateThread == null) && (mAdapter != null)
                 && mAdapter.isEnabled()) {
+                mPowerManager = (PowerManager)getSystemService(POWER_SERVICE);
                 if (V) Log.v(TAG, "Starting a new thread");
                 mUpdateThread = new UpdateThread();
                 mUpdateThread.start();
@@ -484,6 +485,13 @@ public class BluetoothOppService extends Service {
                         if (V) Log.v(TAG, "***returning from updatethread***");
                         return;
                     }
+                    try {
+                        if (!mPowerManager.isInteractive())
+                            Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                            Log.e(TAG, "Interrupted", e);
+                    }
+
                     mPendingUpdate = false;
                 }
                 Cursor cursor;

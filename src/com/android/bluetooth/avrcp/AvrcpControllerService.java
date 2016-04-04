@@ -367,7 +367,6 @@ public class AvrcpControllerService extends ProfileService {
     }
 
     protected boolean stop() {
-        unregisterReceiver(mBroadcastReceiver);
          try {
              deinitDatabase();
              if (mRemoteData != null) {
@@ -382,6 +381,7 @@ public class AvrcpControllerService extends ProfileService {
                  mRemoteData.playerSettingAttribIdFetch = 0;
                  mRemoteData = null;
              }
+             unregisterReceiver(mBroadcastReceiver);
          } catch (Exception e) {
              Log.e(TAG, "Cleanup failed", e);
          }
